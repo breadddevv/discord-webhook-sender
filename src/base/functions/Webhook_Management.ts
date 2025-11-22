@@ -1,8 +1,12 @@
 import axios from 'axios';
 import chalk from 'chalk';
 import consola from 'consola';
-import { spinner } from '@clack/prompts';
-import { log } from 'console';
+import { select, spinner } from '@clack/prompts';
+import * as fs from "fs";
+import path from 'path';
+
+const currentdir = path.join(__dirname, "../../../")
+console.log(currentdir)
 
 interface user {
     id: string,
@@ -22,6 +26,8 @@ export interface webhook {
     token: string,
     name: string
 }
+
+const messagebind = path.join(currentdir, "../message.json")
 
 async function checkAlive(wID: string) {
     const s = spinner()
@@ -45,8 +51,8 @@ async function checkAlive(wID: string) {
     );
 
     if (response.status === 404) {
-        consola.warn(chalk.yellow('Webhook not found (404)'));
         s.stop(chalk.red('Webhook not found'))
+        consola.warn(chalk.yellow('Webhook not found (404)'));
         return false;
     } else if (response.status === 200) {
         s.stop(chalk.green(`Webhook with name ${response.data.name} has been found.`));
@@ -58,5 +64,22 @@ async function checkAlive(wID: string) {
 }
 
 export async function login(wId: string) {
-    const webhookdata = await checkAlive(wId)
+    await checkAlive(wId);
+    const action = await select({
+        message: 'Pick an option.',
+        options: [
+            { value: 'formatmessage', label: 'Format Message' },
+            { value: 'sendmessage', label: 'Send Message' },
+            { value: 'messagebinds', label: 'View message binds' },
+            { value: 'logout', label: 'Logout'}
+        ],
+    });
+
+    switch (action) {
+        case "formatmessage": {
+            if (!fs.existsSync(messagebind)) {
+                fs.writeFileSync(messagebind, JSON.stringify({}, null, 2));
+            }
+        }
+    }
 }
